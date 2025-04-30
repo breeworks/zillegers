@@ -1,5 +1,9 @@
 import e, { Router } from "express";
-import { UserRouter } from "./user";
+import { UserDashboardRoute } from "./user-dashboard";
+import { LeavePlaygroundRoute } from "./leave-playgroung";
+import { PlaygroundDashboardRoute } from "./playground-dashboard";
+import { PlaygroundRoute } from "./playground";
+import { WaitingRoomRoute } from "./waiting-room";
 import client from '@repo/db/client';
 import jwt from "jsonwebtoken";
 import {compare, hash} from "../scrypt";
@@ -108,4 +112,8 @@ router.post("/login", async(req,res) => {
 })  
 
 
-router.use("/user/",UserRouter)
+router.use("/user-dashboard/",UserDashboardRoute)
+router.use("/playground/",PlaygroundRoute)
+router.use("/playground-dashboard/",PlaygroundDashboardRoute)
+router.use("/playground-waiting-room/",WaitingRoomRoute)
+router.use("/leave-playground/",LeavePlaygroundRoute)
