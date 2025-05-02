@@ -16,7 +16,7 @@ datasource db {
 model User {
   id          String     @id @default(uuid())
   username    String     @unique 
-  hashedPassword    String  
+  password    String  
   email       String?    @unique
   isverified  Boolean? @default(false)
   verifiedCode  Int?
