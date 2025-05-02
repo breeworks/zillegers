@@ -33,9 +33,10 @@ router.post("/signup", async(req,res) => {
             const newPlayer = await client.user.create({
                 data:{
                     username,
-                    password: HashingPassword,
+                    hashedPassword: HashingPassword,
+                    
                 }
-            });
+            })
 
             const jwtToken = jwt.sign({ id: newPlayer.id, username: newPlayer.username }, `${JwtSecret}`, { expiresIn: "1d" });
 
@@ -80,7 +81,7 @@ router.post("/signin", async(req,res) => {
             return;      
             }
 
-          const isValidPassword = await compare(password, existingUser.password);
+          const isValidPassword = await compare(password, existingUser.hashedPassword);
           if (!isValidPassword) {
             res.status(401).json({ message: 'Invalid username or password' });
             return;      
