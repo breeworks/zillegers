@@ -1,13 +1,12 @@
-import e, { Router } from "express";
+import { Router } from "express";
 import { UserDashboardRoute } from "./user-dashboard";
 import { LeavePlaygroundRoute } from "./leave-playgroung";
 import { PlaygroundDashboardRoute } from "./playground-dashboard";
 import { PlaygroundRoute } from "./playground";
 import { WaitingRoomRoute } from "./waiting-room";
-import client from '@repo/db/client';
+import client from "@repo/db/client";
 import jwt from "jsonwebtoken";
 import {compare, hash} from "../scrypt";
-import createError, { HttpError } from 'http-errors';
 import { AuthSchema } from "../types";
 
 export const router = Router();
@@ -34,8 +33,8 @@ router.post("/signup", async(req,res) => {
             const newPlayer = await client.user.create({
                 data:{
                     username,
-                    password:HashingPassword
-                },
+                    password: HashingPassword,
+                }
             });
 
             const jwtToken = jwt.sign({ id: newPlayer.id, username: newPlayer.username }, `${JwtSecret}`, { expiresIn: "1d" });
@@ -64,7 +63,7 @@ router.post("/signup", async(req,res) => {
 })
 
 
-router.post("/login", async(req,res) => {
+router.post("/signin", async(req,res) => {
     const JwtSecret = process.env.JwtSecret;
     console.log(`${JwtSecret}`);
     

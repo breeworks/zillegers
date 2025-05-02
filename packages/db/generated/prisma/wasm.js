@@ -120,7 +120,40 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   username: 'username',
-  password: 'password'
+  hashedPassword: 'hashedPassword',
+  email: 'email',
+  isverified: 'isverified',
+  verifiedCode: 'verifiedCode',
+  VerifiedCodeExpireTime: 'VerifiedCodeExpireTime'
+};
+
+exports.Prisma.SocialLinkScalarFieldEnum = {
+  id: 'id',
+  platform: 'platform',
+  url: 'url',
+  userId: 'userId'
+};
+
+exports.Prisma.QuestionBankScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  difficulty: 'difficulty',
+  solution: 'solution',
+  conceptLink: 'conceptLink',
+  tags: 'tags',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LeaderBoardScalarFieldEnum = {
+  id: 'id',
+  rank: 'rank',
+  badge: 'badge',
+  winCount: 'winCount',
+  lossCount: 'lossCount',
+  aiLifeline: 'aiLifeline',
+  graph: 'graph',
+  userId: 'userId'
 };
 
 exports.Prisma.SortOrder = {
@@ -133,9 +166,17 @@ exports.Prisma.QueryMode = {
   insensitive: 'insensitive'
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
-  User: 'User'
+  User: 'User',
+  SocialLink: 'SocialLink',
+  QuestionBank: 'QuestionBank',
+  LeaderBoard: 'LeaderBoard'
 };
 
 /**
