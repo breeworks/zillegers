@@ -27,6 +27,20 @@ router.post("/signup", async (req, res) => {
       });
   
       if (existingUser) {
+        const jwtToken = jwt.sign(
+          { id: existingUser.id, username: existingUser.username },
+          `Secret`,
+          { expiresIn: "1d" }
+        );
+    
+        res.cookie("access_token", jwtToken, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+          maxAge: 1000 * 60 * 60 * 24,
+        });
+
+        console.log('token->',jwtToken);
         res.status(401).json({ message: "Username or email already exists." });
         return
       }
@@ -47,7 +61,7 @@ router.post("/signup", async (req, res) => {
   
       // Send email with code (replace this with actual mail service)
       console.log(`Email to ${email}: Your verification code is ${verifiedCode}`);
-  
+
       res.status(201).json({
         message: `${username} registered. Please verify your email.`,
       });
@@ -97,11 +111,12 @@ router.post("/verify-email", async (req, res) => {
         res.status(400).json({ error: error?.message || "Something went wrong" });
         return;
       }
-    });
+});
 
-  router.post("/signin", async (req, res) => {
+router.post("/signin", async (req, res) => {
     const JwtSecret = process.env.JwtSecret;
-  
+    console.log("jwt",JwtSecret);
+    
     try {
       const { username, password } = AuthSchema.parse(req.body);
   
@@ -126,8 +141,7 @@ router.post("/verify-email", async (req, res) => {
       }
   
       const jwtToken = jwt.sign(
-        { id: existingUser.id, username: existingUser.username },
-        `${JwtSecret}`,
+        { id: existingUser.id, username: existingUser.username },`Secret`,
         { expiresIn: "1d" }
       );
   
@@ -137,6 +151,8 @@ router.post("/verify-email", async (req, res) => {
         sameSite: "lax",
         maxAge: 1000 * 60 * 60 * 24,
       });
+      
+      console.log('token->',jwtToken);
   
       console.log(`${username} logged in successfully`);
       res.status(200).json({ message: "Login successful" });

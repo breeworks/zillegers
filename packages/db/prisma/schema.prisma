@@ -27,12 +27,11 @@ model User {
 
 model SocialLink {
   id       String   @id @default(uuid())
-  platform String  
-  url      String
+  platform String   @unique
+  url      String   @unique
   user     User     @relation("UserSocialLinks",fields: [userId], references: [id])
   userId   String
 }
-
 
 model QuestionBank {
   id            String   @id @default(uuid()) 
@@ -44,7 +43,6 @@ model QuestionBank {
   tags          String[]
   createdAt     DateTime @default(now())
 }
-
 
 model LeaderBoard {
   id         String   @id @default(uuid())
