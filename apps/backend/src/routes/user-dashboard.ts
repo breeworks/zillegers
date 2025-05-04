@@ -6,6 +6,23 @@ import cookieParser from "cookie-parser";
 export const UserDashboardRoute = Router();
 UserDashboardRoute.use(cookieParser());
 
+UserDashboardRoute.get("/user-info",Middleware,async(req,res) => {
+    try {
+        const AllSocailLinks = await client.socialLink.findMany();
+
+        if(AllSocailLinks){
+            console.log(`These are all the link ${AllSocailLinks.map((link)=>`${link.url} \n and ${link.platform}`)} for platforms!`);
+            res.status(201).json({message:`These are all the link ${AllSocailLinks.map((link)=>`${link.url} \n and ${link.platform}`)} for platforms!!`});
+            return;
+        }
+
+    }catch (error : any) {
+        console.error("user-section error:", error?.message || error);
+        res.status(400).json({ error: error?.message || "Something went wrong" });
+        return;
+    }
+})
+
 UserDashboardRoute.post("/user-section", Middleware, async(req,res) => {
     try {
         const {PlatformLinks, Platform} = req.body
@@ -13,6 +30,7 @@ UserDashboardRoute.post("/user-section", Middleware, async(req,res) => {
         const userId =  req.userId;
         console.log(userId);
         
+
         const CreateSocialLink = await client.socialLink.create({
             data: {
               user: {connect: {id: userId}}, 
@@ -44,7 +62,6 @@ UserDashboardRoute.post("/user-section", Middleware, async(req,res) => {
     }
 });
 
-
 UserDashboardRoute.post("/update-user-section", Middleware, async(req,res) => {
     try{
         const {PlatformLinks, Platform} = req.body
@@ -70,7 +87,6 @@ UserDashboardRoute.post("/update-user-section", Middleware, async(req,res) => {
               user: { connect: { id: userId } },
             }
         });
-
         if(UpdateSocialLink){
             console.log(`${PlatformLinks} has been updated!`);
             res.status(201).json({message:`${PlatformLinks} links has been updated!`});
@@ -79,8 +95,7 @@ UserDashboardRoute.post("/update-user-section", Middleware, async(req,res) => {
             console.error(`Error in ${PlatformLinks}`);
             res.status(400).json({message : `error in ${PlatformLinks}` });
             return;
-        };
-
+        };    
     }catch (error: any) {
         console.error("update-user-section error:", error?.message || error);
         res.status(400).json({ error: error?.message || "Something went wrong" });
