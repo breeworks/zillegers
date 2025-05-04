@@ -8,6 +8,21 @@ UserDashboardRoute.use(cookieParser());
 
 UserDashboardRoute.get("/user-info",Middleware,async(req,res) => {
     try {
+        const userId =  req.userId;
+        console.log(userId);
+
+        const user = await client.user.findUnique({
+            where: {
+              id: userId
+            }
+          })
+          
+        if(user){
+            console.log(`User's info ${user.username} ${user.email}!`);
+            res.status(201).json({message:`User's info ${user.username} ${user.email}!`});
+            return;
+        }
+
         const AllSocailLinks = await client.socialLink.findMany();
 
         if(AllSocailLinks){
