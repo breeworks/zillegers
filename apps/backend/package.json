@@ -16,12 +16,16 @@
     "@prisma/client": "^6.6.0",
     "@repo/db": "workspace:*",
     "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
     "http-errors": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
     "prisma": "^6.6.0",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
