@@ -1,12 +1,34 @@
 import { Router } from "express";
+import client from "@repo/db/client";
+import { JoiningcodeMap } from "./playground-dashboard";
+import Middleware from "../middlewares/user";
 
 export const PlaygroundRoute = Router();
 
-PlaygroundRoute.get("/playground", async(req,res) => {
+PlaygroundRoute.post("/playground",Middleware, async(req,res) => {
     try {
-        res.json({
-            "messgae":"this is from user playground"
+        const {submit} = req.query;
+        const {answer} = req.body;
+        const userId = req.userId;
+        const MatchId  = req.cookies.matchId;
+
+        const SubmitCode = await client.solution.create({
+            data:{
+                code: answer,
+                language: "PYTHON",
+                match: {connect: {id: MatchId}},
+                user: { connect: { id: userId } }
+            }
+        })
+
+        const checkCode = await client.solution.findUnique({
+            where:{
+                id: SubmitCode.id
+            }
         });
+
+        // solution from here will then be checked by judge0
+
     } catch (error: any) {
         console.error("Match with playground error:", error?.message || error);
         res.status(500).json({

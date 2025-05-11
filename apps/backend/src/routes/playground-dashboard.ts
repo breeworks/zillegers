@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 // logic so that P1 can send Joiningcode to P2 and if P2 join succeffully,
 // both will get notify if not P2 can send some msg error in joining
 
-const JoiningcodeMap = new Map(); // code -> { creatorId, expiry, matchId?, createdAt }
+export const JoiningcodeMap = new Map(); // code -> { creatorId, expiry, matchId?, createdAt }
 
 export const PlaygroundDashboardRoute = Router();
 
@@ -140,6 +140,14 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
             status: "ACTIVE",
           },
         });
+
+        res.cookie("matchId",match.id, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+          maxAge: 1000 * 60 * 60 * 24,
+        });
+  
 
         // Update code data with match ID
         codeData.matchId = match.id;
