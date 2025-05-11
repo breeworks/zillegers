@@ -139,7 +139,7 @@ router.post("/signin", async (req, res) => {
         return;
       }
   
-      const isValidPassword = await compare(password, existingUser.password);
+      const isValidPassword = await compare(password, existingUser.password);      
       if (!isValidPassword) {
         res.status(401).json({ message: "Invalid password" });
         return;
@@ -163,7 +163,7 @@ router.post("/signin", async (req, res) => {
       res.status(200).json({ message: "Login successful" });
       return 
     } catch (error: any) {
-        console.error("Signup error:", error?.message || error);
+        console.error("Signin error:", error?.message || error);
         res.status(400).json({ error: error?.message || "Something went wrong" });
         return;
       }

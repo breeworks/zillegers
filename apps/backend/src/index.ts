@@ -12,6 +12,7 @@ app.use(cors());
 
 const server = createServer(app);
 const io = new Server(server);
+app.set("io", io);
 
 io.on('connection', (socket) => {
     console.log('a user connected');

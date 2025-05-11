@@ -6,8 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 // logic so that P1 can send Joiningcode to P2 and if P2 join succeffully,
 // both will get notify if not P2 can send some msg error in joining
 
-const JoiningcodeMap = new Map();
-console.log("MAP -> ", JoiningcodeMap);
+const JoiningcodeMap = new Map(); // code -> { creatorId, expiry, matchId?, createdAt }
 
 export const PlaygroundDashboardRoute = Router();
 
@@ -16,18 +15,25 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
     try {
       const userId = req.userId;
       const { action } = req.query;
+      const { Difficulty,topic } = req.body;      
 
       // CASE 1: Player wants to create a joining code
       if (action === "create") {
         const joiningCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        JoiningcodeMap.set(joiningCode, { creatorId: userId,
+        JoiningcodeMap.set(joiningCode, { 
+          creatorId: userId,
           expiry: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes expiry
           createdAt: new Date(),
+          Difficulty: Difficulty,
+          Topic: topic
         });
+        console.log(JoiningcodeMap);
         res.status(200).json({ success: true, joiningCode, message: "Share this code with your buddy to join the match"});
         return;
       }
+
+      
 
       // CASE 2: Player wants to join using a code
       else if (action === "join") {
@@ -37,7 +43,7 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
           res.status(400).json({
             success: false,
             message: "Joining code is required",
-          });
+          })
           return;
         }
 
@@ -77,6 +83,8 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
           return;
         }
 
+        // both the players should have same Difficulty and problem topic
+
         //create team in db
         const team = await client.team.create({
           data: {
@@ -87,14 +95,34 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
           },
         });
 
-
+        console.log(team.playerOneId,team.playerTwoId);
+        
         // Select a random question
+        // const question = await client.questionBank.findFirst({
+        //   orderBy: {
+        //     id: "desc", // Replace with a random order mechanism
+        //   },
+        //   take: 1,
+        // });
+
         const question = await client.questionBank.findFirst({
-          orderBy: {
-            id: "desc", // Replace with a random order mechanism
+          where:{
+            tags: topic,
+            difficulty: Difficulty
           },
-          take: 1,
         });
+
+        // if(question){
+        //   const deleteQuestion = await client.questionBank.delete({
+        //     where:{
+        //       id: question.id,  
+        //       tags: JoiningcodeMap.get(topic),
+        //       difficulty: JoiningcodeMap.get(Difficulty)
+        //     }
+        //   });
+        // }
+
+        console.log(question);
 
         if (!question) {
           res.status(500).json({
@@ -119,7 +147,7 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
 
         // Emit socket event to notify creator
         const io = req.app.get("io"); // Assuming you attached io to app
-        io.to(`user-${codeData.creatorId}`).emit("matchCreated", {
+        io.to(`Hey! user-${codeData.creatorId}`).emit("matchCreated", {
           matchId: match.id,
           opponent: {
             id: userId,
@@ -194,28 +222,3 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
       });
     }
 });
-
-// Cleanup expired codes periodically
-setInterval(() => {
-  const now = new Date();
-  for (const [code, data] of JoiningcodeMap.entries()) {
-    if (data.expiry < now) {
-      JoiningcodeMap.delete(code);
-    }
-  }
-}, 60000); // Clean up every minute
-
-PlaygroundDashboardRoute.get("/match-with-random", async (req, res) => {
-  res.json({
-    messgae: "this is from user playground match-with-random-player ",
-  });
-});
-
-PlaygroundDashboardRoute.get(
-  "/match-with-waiting-users-list",
-  async (req, res) => {
-    res.json({
-      messgae: "this is from user playground match-with-your-waiting-users",
-    });
-  }
-);

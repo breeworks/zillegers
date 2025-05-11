@@ -33,7 +33,9 @@ model User {
   // Additional useful fields
   createdAt               DateTime   @default(now())
   lastActive              DateTime   @default(now())
-  preferredLanguages      String[]   // ['javascript', 'python', etc.]
+  preferredLanguages      Language?     
+  tags                    Tags?
+  status                  String?
 }
 
 model SocialLink {
@@ -50,10 +52,10 @@ model QuestionBank {
   id              String   @id @default(uuid())
   title           String   @unique
   description     String   @db.Text // For longer content
-  difficulty      String
+  difficulty      Difficulty
   solution        String   @db.Text
   conceptLink     String
-  tags            String[]
+  tags            Tags
   createdAt       DateTime @default(now())
   
   // Added fields
@@ -119,12 +121,14 @@ model Match {
   // Results
   winnerId      String?  // User ID of winner
   winReason     String?  // Time, space, correctness, etc.
+  LosserId      String?
+  losReason     String?
 }
 
 model Solution {
   id            String   @id @default(uuid())
   code          String   @db.Text
-  language      String
+  language      Language
   submittedAt   DateTime @default(now())
   executionTime Float?   // In milliseconds
   memoryUsed    Float?   // In MB
@@ -141,4 +145,24 @@ model Solution {
   // Analysis
   timeComplexity String?
   spaceComplexity String?
+}
+
+enum Language {
+  PYTHON
+  JAVASCRIPT
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Tags {
+  Binary_Search
+  Array
+  Hashing
+  Two_Pointers
+  Sliding_Window
+  Heap
 }
