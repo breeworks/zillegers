@@ -80,7 +80,7 @@ PlaygroundRoute.post("/playground", Middleware, async (req, res) => {
           {
             headers: {
               "Content-Type": "application/json",
-              "X-RapidAPI-Key": process.env.RAPIDAPI_KEY || "262566b573msh538f22882e7666ep12f349jsn75615b7dfdcf",
+              "X-RapidAPI-Key": process.env.RAPIDAPI_KEY || "",
               "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
             }
           }
