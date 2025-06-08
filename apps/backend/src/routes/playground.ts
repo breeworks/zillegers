@@ -5,7 +5,7 @@ import axios from "axios";
 
 export const PlaygroundRoute = Router();
 
-const RAPIDAPI_KEY = "262566b573msh538f22882e7666ep12f349jsn75615b7dfdcf";
+const RAPIDAPI_KEY = "";
 
 // Helper function to get best submission for a user
 function getBestSubmission(submissions: any[]) {
