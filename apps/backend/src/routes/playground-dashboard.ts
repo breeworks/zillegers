@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 // logic so that P1 can send Joiningcode to P2 and if P2 join succeffully,
 // both will get notify if not P2 can send some msg error in joining
 
-const JoiningcodeMap = new Map(); // code -> { creatorId, expiry, matchId?, createdAt }
+export const JoiningcodeMap = new Map(); // code -> { creatorId, expiry, matchId?, createdAt }
 
 export const PlaygroundDashboardRoute = Router();
 
@@ -31,11 +31,10 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
         console.log(JoiningcodeMap);
         res.status(200).json({ success: true, joiningCode, message: "Share this code with your buddy to join the match"});
         return;
-      }
-
-      
+      }     
 
       // CASE 2: Player wants to join using a code
+      // {FIX: both player has to have same topic and difficulty level, then only they are allowed to continue the match.}
       else if (action === "join") {
         const { code } = req.query;
 
@@ -84,6 +83,10 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
         }
 
         // both the players should have same Difficulty and problem topic
+        if(codeData.difficulty != Difficulty && codeData.topic != topic){
+          res.status(400).json({success: false, message: "Both players must have the same difficulty and topic to join the match"});
+          return;
+        }
 
         //create team in db
         const team = await client.team.create({
@@ -107,7 +110,9 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
 
         const question = await client.questionBank.findFirst({
           where:{
-            tags: topic,
+            tags: {
+              has: topic
+            },
             difficulty: Difficulty
           },
         });
@@ -140,6 +145,14 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
             status: "ACTIVE",
           },
         });
+
+        res.cookie("matchId",match.id, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+          maxAge: 1000 * 60 * 60 * 24,
+        });
+  
 
         // Update code data with match ID
         codeData.matchId = match.id;
@@ -214,6 +227,7 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
         });
         return;
       }
+      
     } catch (error: any) {
       console.error("Match with buddy error:", error?.message || error);
       res.status(500).json({
@@ -221,4 +235,14 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
         error: error?.message || "Something went wrong",
       });
     }
+  // Clean up expired codes every 10 min (example, put outside the route)
+  setInterval(() => {
+    const now = new Date();
+    for (const [code, data] of JoiningcodeMap.entries()) {
+      if (data.expiry < now) {
+        JoiningcodeMap.delete(code);
+      }
+    }
+  }, 10 * 60 * 1000);
+    
 });

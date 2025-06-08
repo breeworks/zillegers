@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,7 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Existing models with improvements
 model User {
   id                      String     @id @default(uuid())
   username                String     @unique
@@ -23,106 +19,131 @@ model User {
   verifiedCode            Int?
   verifiedCodeExpireTime  DateTime?
   
-  // Added relations
   playerOneTeams          Team[]     @relation("PlayerOneTeams")
   playerTwoTeams          Team[]     @relation("PlayerTwoTeams")
   leaderboards            LeaderBoard[] @relation("UserLeaderBoards")
   socialLinks             SocialLink[]  @relation("UserSocialLinks")
   submittedSolutions      Solution[]  @relation("UserSolutions")
   
-  // Additional useful fields
   createdAt               DateTime   @default(now())
   lastActive              DateTime   @default(now())
-  preferredLanguages      Language?     
-  tags                    Tags?
-  status                  String?
+  preferredLanguages      Language[]  // Changed to array for multiple languages
+  tags                    Tags[]      // Changed to array for multiple tags
+  status                  UserStatus  @default(ACTIVE)
+  
+  @@map("users")
 }
 
 model SocialLink {
   id       String   @id @default(uuid())
-  platform String
+  platform SocialPlatform
   url      String
-  user     User     @relation("UserSocialLinks", fields: [userId], references: [id])
+  user     User     @relation("UserSocialLinks", fields: [userId], references: [id], onDelete: Cascade)
   userId   String
   
-  @@unique([userId, platform]) // Better unique constraint
+  @@unique([userId, platform])
+  @@map("social_links")
 }
 
 model QuestionBank {
   id              String   @id @default(uuid())
   title           String   @unique
-  description     String   @db.Text // For longer content
+  description     String   @db.Text
   difficulty      Difficulty
   solution        String   @db.Text
-  conceptLink     String
-  tags            Tags
-  createdAt       DateTime @default(now())
+  concept_link     String
+  tags            Tags[]
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
   
-  // Added fields
-  testCases       Json     // Store test cases as JSON
-  expectedTimeComplexity String
-  expectedSpaceComplexity String
-  hints           String[] // Progressive hints
+  // Improved test case structure
+  test_cases       Json     // Structure: {public: TestCase[], hidden: TestCase[]}
+  expected_time_complexity String
+  expected_space_complexity String
+  hints           String[]
+  
+  // Additional fields
+  is_active        Boolean  @default(true)
+  author_id        String?  // Who created this question
+  constraints     String?  // Input constraints
+  examples        Json?    // Example inputs/outputs for display
   
   // Relations
-  matches         Match[]  // Questions used in matches
+  matches         Match[]
+  
+  @@map("question_bank")
 }
 
 model LeaderBoard {
   id         String   @id @default(uuid())
-  rank       String?
-  badge      String?
+  rank       Int?     // Changed to Int for proper ranking
+  badge      Badge?
   winCount   Int      @default(0)
   lossCount  Int      @default(0)
-  aiLifeline String?
-  graph      String?  // Consider using JSON type
+  aiLifeline Int      @default(3) // Number of AI hints available
   
   // Relations
-  user       User     @relation("UserLeaderBoards", fields: [userId], references: [id])
-  userId     String
+  user       User     @relation("UserLeaderBoards", fields: [userId], references: [id], onDelete: Cascade)
+  userId     String   @unique // One leaderboard per user
   
-  // Added fields
-  totalMatches      Int  @default(0)
-  averageSolveTime  Float? // In seconds
-  fastestSolve      Float? // In seconds
-  rating            Int  @default(1000) // ELO-style rating
+  // Performance metrics
+  totalMatches      Int     @default(0)
+  averageSolveTime  Float?  // In seconds
+  fastestSolve      Float?  // In seconds
+  rating            Int     @default(1000) // ELO-style rating
+  streak            Int     @default(0)    // Current win streak
+  bestStreak        Int     @default(0)    // Best win streak
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("leaderboards")
 }
 
-// New models
 model Team {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String?
-  joinCode    String?  @unique
-  isPrivate   Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  joinCode    String?   @unique
+  isPrivate   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
   expireAt    DateTime? // For temporary teams
+  status      TeamStatus @default(WAITING)
   
   // Relations
   playerOneId String
-  playerOne   User     @relation("PlayerOneTeams", fields: [playerOneId], references: [id])
+  playerOne   User      @relation("PlayerOneTeams", fields: [playerOneId], references: [id])
   playerTwoId String?
-  playerTwo   User?    @relation("PlayerTwoTeams", fields: [playerTwoId], references: [id])
+  playerTwo   User?     @relation("PlayerTwoTeams", fields: [playerTwoId], references: [id])
   matches     Match[]
+  
+  @@map("teams")
 }
 
 model Match {
-  id            String   @id @default(uuid())
-  startTime     DateTime @default(now())
+  id            String      @id @default(uuid())
+  startTime     DateTime    @default(now())
   endTime       DateTime?
-  status        String   @default("WAITING") // WAITING, ACTIVE, COMPLETED, ABANDONED
+  status        MatchStatus @default(WAITING)
   
   // Relations
   teamId        String
-  team          Team     @relation(fields: [teamId], references: [id])
+  team          Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
   questionId    String
   question      QuestionBank @relation(fields: [questionId], references: [id])
   solutions     Solution[]
   
   // Results
-  winnerId      String?  // User ID of winner
-  winReason     String?  // Time, space, correctness, etc.
-  LosserId      String?
-  losReason     String?
+  winnerId      String?     // User ID of winner
+  winReason     WinReason?  // Enum for win reasons
+  loserId       String?     // Fixed typo: LosserId -> loserId
+  lossReason    LossReason? // Enum for loss reasons
+  
+  // Match settings
+  timeLimit     Int         @default(1800) // 30 minutes in seconds
+  allowHints    Boolean     @default(true)
+  
+  @@map("matches")
 }
 
 model Solution {
@@ -130,26 +151,37 @@ model Solution {
   code          String   @db.Text
   language      Language
   submittedAt   DateTime @default(now())
+  
+  // Execution metrics
   executionTime Float?   // In milliseconds
   memoryUsed    Float?   // In MB
   passedTests   Int      @default(0)
   totalTests    Int      @default(0)
   hintsUsed     Int      @default(0)
+  isCorrect     Boolean  @default(false)
   
   // Relations
   matchId       String
-  match         Match    @relation(fields: [matchId], references: [id])
+  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
   userId        String
   user          User     @relation("UserSolutions", fields: [userId], references: [id])
   
   // Analysis
-  timeComplexity String?
+  timeComplexity  String?
   spaceComplexity String?
+  testResults     Json?    // Detailed test case results
+  
+  @@map("solutions")
 }
 
+// Enums
 enum Language {
   PYTHON
   JAVASCRIPT
+  JAVA
+  CPP
+  C
+  TYPESCRIPT
 }
 
 enum Difficulty {
@@ -159,10 +191,77 @@ enum Difficulty {
 }
 
 enum Tags {
-  Binary_Search
-  Array
-  Hashing
-  Two_Pointers
-  Sliding_Window
-  Heap
+  BINARY_SEARCH
+  ARRAY
+  HASHING
+  TWO_POINTERS
+  SLIDING_WINDOW
+  HEAP
+  DYNAMIC_PROGRAMMING
+  GREEDY
+  BACKTRACKING
+  TREE
+  GRAPH
+  LINKED_LIST
+  STACK
+  QUEUE
+  STRING
+  MATH
+  BIT_MANIPULATION
+  SORTING
+  SEARCHING
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+enum SocialPlatform {
+  GITHUB
+  LINKEDIN
+  TWITTER
+  DISCORD
+  WEBSITE
+}
+
+enum Badge {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+  CHAMPION
+}
+
+enum TeamStatus {
+  WAITING
+  FULL
+  IN_MATCH
+  COMPLETED
+}
+
+enum MatchStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  ABANDONED
+  CANCELLED
+}
+
+enum WinReason {
+  FASTER_SOLUTION
+  CORRECT_SOLUTION
+  BETTER_COMPLEXITY
+  OPPONENT_TIMEOUT
+  OPPONENT_DISCONNECT
+}
+
+enum LossReason {
+  SLOWER_SOLUTION
+  INCORRECT_SOLUTION
+  WORSE_COMPLEXITY
+  TIMEOUT
+  DISCONNECTED
 }
