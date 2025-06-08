@@ -82,11 +82,14 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
           return;
         }
 
-        // both the players should have same Difficulty and problem topic
-        if(codeData.difficulty != Difficulty && codeData.topic != topic){
-          res.status(400).json({success: false, message: "Both players must have the same difficulty and topic to join the match"});
-          return;
-        }
+        console.log("codeData info", codeData.Difficulty, codeData.Topic);
+        console.log("p2 info:",Difficulty,topic);
+
+        // both the players should have same Difficulty and problem topic  {FIX THIS}
+        // if(codeData.difficulty != Difficulty && codeData.topic != topic){
+        //   res.status(400).json({success: false, message: "Both players must have the same difficulty and topic to join the match"});
+        //   return;
+        // }
 
         //create team in db
         const team = await client.team.create({
@@ -98,7 +101,7 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
           },
         });
 
-        console.log(team.playerOneId,team.playerTwoId);
+        console.log("PL1",team.playerOneId,"PL2",team.playerTwoId);
         
         // Select a random question
         // const question = await client.questionBank.findFirst({
@@ -218,7 +221,7 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
           return;
         }
       }
-
+      
       // Invalid action
       else {
         res.status(400).json({
@@ -227,7 +230,6 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
         });
         return;
       }
-      
     } catch (error: any) {
       console.error("Match with buddy error:", error?.message || error);
       res.status(500).json({
@@ -244,5 +246,4 @@ PlaygroundDashboardRoute.post("/match-with-your-buddy",Middleware,async (req, re
       }
     }
   }, 10 * 60 * 1000);
-    
 });
