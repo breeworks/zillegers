@@ -16,7 +16,12 @@ router.post("/signup", async (req, res) => {
     try {
       const { username, password, email } = AuthSchema.parse(req.body);
       const HashingPassword = await hash(password);
-  
+
+      if (!email || !username || !password) {
+        res.status(400).json({ message: "Please provide all the credentials." });
+        return;
+      }
+        
       const existingUser = await client.user.findFirst({
         where: {
           OR: [
@@ -46,7 +51,7 @@ router.post("/signup", async (req, res) => {
       }
   
       const verifiedCode = Math.floor(100000 + Math.random() * 900000); // 6-digit code
-      const VerifiedCodeExpireTime = new Date(Date.now() + 3600000); // 1 hour
+      const verifiedCodeExpireTime = new Date(Date.now() + 3600000); // 1 hour
   
       const newPlayer = await client.user.create({
         data: {
@@ -54,7 +59,7 @@ router.post("/signup", async (req, res) => {
           password: HashingPassword,
           email,
           verifiedCode,
-          VerifiedCodeExpireTime,
+          verifiedCodeExpireTime,
           isverified: false,
         },
       });
@@ -92,7 +97,7 @@ router.post("/verify-email", async (req, res) => {
       }
   
       const isCodeValid = user.verifiedCode === parseInt(code);
-      const isNotExpired = user.VerifiedCodeExpireTime && new Date(user.VerifiedCodeExpireTime) > new Date();
+      const isNotExpired = user.verifiedCodeExpireTime && new Date(user.verifiedCodeExpireTime) > new Date();
   
       if (isCodeValid && isNotExpired) {
         await client.user.update({
@@ -134,7 +139,7 @@ router.post("/signin", async (req, res) => {
         return;
       }
   
-      const isValidPassword = await compare(password, existingUser.password);
+      const isValidPassword = await compare(password, existingUser.password);      
       if (!isValidPassword) {
         res.status(401).json({ message: "Invalid password" });
         return;
@@ -158,7 +163,7 @@ router.post("/signin", async (req, res) => {
       res.status(200).json({ message: "Login successful" });
       return 
     } catch (error: any) {
-        console.error("Signup error:", error?.message || error);
+        console.error("Signin error:", error?.message || error);
         res.status(400).json({ error: error?.message || "Something went wrong" });
         return;
       }

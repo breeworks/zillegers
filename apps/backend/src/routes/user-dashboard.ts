@@ -17,17 +17,18 @@ UserDashboardRoute.get("/user-info",Middleware,async(req,res) => {
             }
           })
           
+        const AllSocailLinks = await client.socialLink.findMany();
+          
         if(user){
-            console.log(`User's info ${user.username} ${user.email}!`);
-            res.status(201).json({message:`User's info ${user.username} ${user.email}!`});
+            console.log(`User's info ${user.username} ${user.email}! These are all the link ${AllSocailLinks.map((link)=>`${link.url} \n and ${link.platform}`)} for platforms!`);
+            res.status(201).json({message:`User's info ${user.username} ${user.email}! These are all the link ${AllSocailLinks.map((link)=>`${link.url} \n and ${link.platform}`)} for platforms!`});
             return;
         }
 
-        const AllSocailLinks = await client.socialLink.findMany();
 
-        if(AllSocailLinks){
-            console.log(`These are all the link ${AllSocailLinks.map((link)=>`${link.url} \n and ${link.platform}`)} for platforms!`);
-            res.status(201).json({message:`These are all the link ${AllSocailLinks.map((link)=>`${link.url} \n and ${link.platform}`)} for platforms!!`});
+        if(!AllSocailLinks){
+            console.log(`There's no social link added!`);
+            res.status(201).json({message:`There's no social link added!`});
             return;
         }
 

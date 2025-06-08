@@ -13,35 +13,59 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Existing models with improvements
 model User {
-  id          String     @id @default(uuid())
-  username    String     @unique 
-  password    String  
-  email       String?    @unique
-  isverified  Boolean? @default(false)
-  verifiedCode  Int?
-  VerifiedCodeExpireTime DateTime?
-  leaderboards LeaderBoard[] @relation("UserLeaderBoards")
-  socialLinks  SocialLink[]  @relation("UserSocialLinks")
+  id                      String     @id @default(uuid())
+  username                String     @unique
+  password                String
+  email                   String?    @unique
+  isverified              Boolean    @default(false)
+  verifiedCode            Int?
+  verifiedCodeExpireTime  DateTime?
+  
+  // Added relations
+  playerOneTeams          Team[]     @relation("PlayerOneTeams")
+  playerTwoTeams          Team[]     @relation("PlayerTwoTeams")
+  leaderboards            LeaderBoard[] @relation("UserLeaderBoards")
+  socialLinks             SocialLink[]  @relation("UserSocialLinks")
+  submittedSolutions      Solution[]  @relation("UserSolutions")
+  
+  // Additional useful fields
+  createdAt               DateTime   @default(now())
+  lastActive              DateTime   @default(now())
+  preferredLanguages      Language?     
+  tags                    Tags?
+  status                  String?
 }
 
 model SocialLink {
   id       String   @id @default(uuid())
-  platform String   @unique
-  url      String   @unique
-  user     User     @relation("UserSocialLinks",fields: [userId], references: [id])
+  platform String
+  url      String
+  user     User     @relation("UserSocialLinks", fields: [userId], references: [id])
   userId   String
+  
+  @@unique([userId, platform]) // Better unique constraint
 }
 
 model QuestionBank {
-  id            String   @id @default(uuid()) 
-  title         String
-  description   String
-  difficulty    String
-  solution      String
-  conceptLink   String
-  tags          String[]
-  createdAt     DateTime @default(now())
+  id              String   @id @default(uuid())
+  title           String   @unique
+  description     String   @db.Text // For longer content
+  difficulty      Difficulty
+  solution        String   @db.Text
+  conceptLink     String
+  tags            Tags
+  createdAt       DateTime @default(now())
+  
+  // Added fields
+  testCases       Json     // Store test cases as JSON
+  expectedTimeComplexity String
+  expectedSpaceComplexity String
+  hints           String[] // Progressive hints
+  
+  // Relations
+  matches         Match[]  // Questions used in matches
 }
 
 model LeaderBoard {
@@ -51,7 +75,94 @@ model LeaderBoard {
   winCount   Int      @default(0)
   lossCount  Int      @default(0)
   aiLifeline String?
-  graph      String?
-  user     User   @relation("UserLeaderBoards", fields: [userId], references: [id])
-  userId   String
+  graph      String?  // Consider using JSON type
+  
+  // Relations
+  user       User     @relation("UserLeaderBoards", fields: [userId], references: [id])
+  userId     String
+  
+  // Added fields
+  totalMatches      Int  @default(0)
+  averageSolveTime  Float? // In seconds
+  fastestSolve      Float? // In seconds
+  rating            Int  @default(1000) // ELO-style rating
+}
+
+// New models
+model Team {
+  id          String   @id @default(uuid())
+  name        String?
+  joinCode    String?  @unique
+  isPrivate   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  expireAt    DateTime? // For temporary teams
+  
+  // Relations
+  playerOneId String
+  playerOne   User     @relation("PlayerOneTeams", fields: [playerOneId], references: [id])
+  playerTwoId String?
+  playerTwo   User?    @relation("PlayerTwoTeams", fields: [playerTwoId], references: [id])
+  matches     Match[]
+}
+
+model Match {
+  id            String   @id @default(uuid())
+  startTime     DateTime @default(now())
+  endTime       DateTime?
+  status        String   @default("WAITING") // WAITING, ACTIVE, COMPLETED, ABANDONED
+  
+  // Relations
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id])
+  questionId    String
+  question      QuestionBank @relation(fields: [questionId], references: [id])
+  solutions     Solution[]
+  
+  // Results
+  winnerId      String?  // User ID of winner
+  winReason     String?  // Time, space, correctness, etc.
+  LosserId      String?
+  losReason     String?
+}
+
+model Solution {
+  id            String   @id @default(uuid())
+  code          String   @db.Text
+  language      Language
+  submittedAt   DateTime @default(now())
+  executionTime Float?   // In milliseconds
+  memoryUsed    Float?   // In MB
+  passedTests   Int      @default(0)
+  totalTests    Int      @default(0)
+  hintsUsed     Int      @default(0)
+  
+  // Relations
+  matchId       String
+  match         Match    @relation(fields: [matchId], references: [id])
+  userId        String
+  user          User     @relation("UserSolutions", fields: [userId], references: [id])
+  
+  // Analysis
+  timeComplexity String?
+  spaceComplexity String?
+}
+
+enum Language {
+  PYTHON
+  JAVASCRIPT
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Tags {
+  Binary_Search
+  Array
+  Hashing
+  Two_Pointers
+  Sliding_Window
+  Heap
 }
